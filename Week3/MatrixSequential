@@ -1,0 +1,8 @@
+class MatrixSequential{
+	
+	public double multiplay(double[][] a, double[][] b){
+		
+		double result = new double[][]
+		return ;
+	} 
+}
