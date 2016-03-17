@@ -5,13 +5,17 @@ import java.util.concurrent.*;
 
 class Main{
 	public static void main(String[] args){
-		double timepoint;
-		long n = (long)2.00e5; 
+		
+		// Kan endres 
+		long n = (long)2.00e6; 
 		long threads = 4;
 		boolean print = false;
 		boolean testrun = false;
-	
+
+
+		double timepoint;
 		EratosthenesSil e = new EratosthenesSil(n);
+
 		System.out.printf("n = %s, threads = %d (Time are in ms)\n", String.format("%2.3e", n+0.0), threads);
 		timepoint = System.nanoTime();
 		e.generatePrimesByEratosthenes();
@@ -112,7 +116,7 @@ class EratosthenesSil{
 
 	/* --- Factorize sequential --- */ 
 	public void factorize(boolean print){
-		long startpolong = (long)maxNum*(long)maxNum-100;
+		long startpoint = (long)maxNum*(long)maxNum-100;
 		ArrayList factList;
 		for (long i = 0; i < 100; i ++){
 			factList = factorizeSingle(startpoint+i);
@@ -140,7 +144,7 @@ class EratosthenesSil{
 	/* --- Factorize in parallell --- */
 	public void factorize(boolean print, long total_threads){
 		this.tt = total_threads;
-		long startpolong = (long)maxNum*(long)maxNum-100;
+		long startpoint = (long)maxNum*(long)maxNum-100;
 		ArrayList factList;
 		for (long i = 0; i < 100; i ++){
 			factList = factorizeSingleParallell(startpoint+i);
@@ -153,7 +157,7 @@ class EratosthenesSil{
 	public ArrayList<Long> factorizeSingleParallell(long num){
 		ArrayList<Long> factList = new ArrayList<Long>();
 		factList.add(num); 
-		barrier = new CyclicBarrier(tt+1);
+		barrier = new CyclicBarrier((int)(tt+1));
 
 		for (long t = 0; t < tt; t++){
 				//double timepolong = System.nanoTime();	
@@ -168,7 +172,7 @@ class EratosthenesSil{
 			System.exit(1);
 		}
 		long factsum = 1;
-		for (long i = 1; i < factList.size(); i++){
+		for (int i = 1; i < factList.size(); i++){
 			factsum *= factList.get(i);
 		}
 		if (factsum != factList.get(0)){
@@ -235,7 +239,7 @@ class EratosthenesSil{
 	/* ------------ Private help methods to factorize --------- */
 	private void printFact(ArrayList<Long> factList){
 		System.out.printf("%d == ", factList.get(0));
-		for (long i = 1; i < factList.size()-1; i++){
+		for (int i = 1; i < factList.size()-1; i++){
 			System.out.printf("%d * ",factList.get(i));
 		}
 		System.out.printf("%d\n", factList.get(factList.size()-1));	
@@ -247,7 +251,7 @@ class EratosthenesSil{
 
 	/* ------------ Private help methods to primes ------------ */ 
 	private void setAllBitsToOne() {
-		for (long i = 0; i < bitarray.length; i++) {
+		for (int i = 0; i < bitarray.length; i++) {
 			bitarray[i] = (byte)255;
 		}
 	}
@@ -256,16 +260,17 @@ class EratosthenesSil{
 		if (bit % 2 == 0){
 			return;
 		}
-		byte b = bitarray[bit/16];
+
+		byte b = bitarray[(int)bit/16];
 		b = (byte) (b &~(1<< (bit%16/2))) ;
-		bitarray[bit/16] = b;
+		bitarray[(int)bit/16] = b;
 	} 
 
 	private boolean getBit(long i){
 		if (i%2 == 0){
 			return false;
 		}
-		return (bitarray[i/16] & (1 << i%16/2)) != 0;
+		return (bitarray[(int)i/16] & (1 << i%16/2)) != 0;
 	}
 
 	public boolean isPrime(long i){

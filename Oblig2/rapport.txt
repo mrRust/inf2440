@@ -1,0 +1,22 @@
+Kompilering og kjøring:
+javac Main.java
+java Main
+
+Programmet vil nå kjøre 2.0e+9 ganger.
+Om man vil printe faktorisering eller kjøre test må man endre på variabler i linje 10-14. Dette skal være ganske intuitivt. 
+
+Tider:
+n = 2.000e+06, threads = 4 (Time are in ms)
+EratosthenesSil Sequential: 951.769
+Factorization Sequential:   252.551
+EratosthenesSil Parallell:  494.781
+Factorization Parallell:    675.029
+
+Dette er ved kjøring 2 millioner. Tidene er ca. 100 ganger tregere enn tidskravet i oppgaven. 
+Jeg må skrive om oppgaver for å finne ut hva som gjør at det går så sakte. 
+
+EratosthenesSil får en speedup på ~2
+Faktorization får ned "negativ speedup" på 0.3-0.5 avhenning av input.  
+
+
+Alle deloppgavene skal være løst på riktig måte i henhold til oppgaven.
