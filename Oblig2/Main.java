@@ -6,18 +6,20 @@ import java.util.concurrent.*;
 class Main{
 	public static void main(String[] args){
 		double timepoint;
-		int n = (int)2.00e2; 
-		int threads = Runtime.getRuntime().availableProcessors();
-		boolean print = true;
-		
+		long n = (long)2.00e5; 
+		long threads = 4;
+		boolean print = false;
+		boolean testrun = false;
+	
 		EratosthenesSil e = new EratosthenesSil(n);
-		System.out.printf("n = %d, threads = %d (Time are in ms)\n", n, threads);
-
+		System.out.printf("n = %s, threads = %d (Time are in ms)\n", String.format("%2.3e", n+0.0), threads);
 		timepoint = System.nanoTime();
 		e.generatePrimesByEratosthenes();
 		System.out.printf("EratosthenesSil Sequential: %-10.3f\n", (System.nanoTime()-timepoint)/1000000);
 		
-		e.printLast100();
+		if (testrun){
+			e.printLast100();	
+		}
 
 		timepoint = System.nanoTime();
 		e.factorize(print);
@@ -27,7 +29,9 @@ class Main{
 		e.generatePrimesByEratosthenes(threads);
 		System.out.printf("EratosthenesSil Parallell:  %-10.3f\n", (System.nanoTime()-timepoint)/1000000);
 		
-		e.printLast100();
+		if (testrun){
+			e.printLast100();	
+		}
 
 		timepoint = System.nanoTime();
 		e.factorize(print, threads);
@@ -45,13 +49,13 @@ class Main{
 
 class EratosthenesSil{
 	byte [] bitarray;          
-	int  maxNum;
+	long  maxNum;
 	CyclicBarrier barrier;  
-	int tt; // Total threds
+	long tt; // Total threds
 
-	EratosthenesSil(int maxNum) {
+	EratosthenesSil(long maxNum) {
 		this.maxNum = maxNum;
-		bitarray = new byte [(maxNum/16)+1];
+		bitarray = new byte[(int)(maxNum/16)+1];
 	}
 
 
@@ -59,19 +63,19 @@ class EratosthenesSil{
 	public void generatePrimesByEratosthenes() {
 		setAllBitsToOne();
 		setBitToZero(1);     
-		for (int i = 3; i <= maxNum; i ++){
+		for (long i = 3; i <= maxNum; i ++){
 			if (getBit(i) && !isPrime(i)){
 				setMultiplumToZero(i);
 			}
 		}
 	} 
 	/* --- Generate primes in parallell --- */
-	public void generatePrimesByEratosthenes(int total_threads) {
+	public void generatePrimesByEratosthenes(long total_threads) {
 		this.tt = total_threads;
 		setAllBitsToOne();
 		setBitToZero(1);
-		barrier = new CyclicBarrier(tt+1);
-		for (int t = 0; t < tt; t++){
+		barrier = new CyclicBarrier((int)tt+1);
+		for (long t = 0; t < tt; t++){
 			new Thread(new generateParallell(t)).start();
 		}
 		try {
@@ -83,12 +87,12 @@ class EratosthenesSil{
 	} 
 
 	class generateParallell implements Runnable{
-		int thread_num;
-		generateParallell(int t){
+		long thread_num;
+		generateParallell(long t){
 			thread_num = t;
 		}
 		public void run(){
-			for (int i = 3+thread_num; i < maxNum; i += tt){
+			for (long i = 3+thread_num; i < maxNum; i += tt){
 				if (getBit(i) && !isPrime(i)){
 					setMultiplumToZero(i);
 				}
@@ -108,7 +112,7 @@ class EratosthenesSil{
 
 	/* --- Factorize sequential --- */ 
 	public void factorize(boolean print){
-		long startpoint = (long)maxNum*(long)maxNum-100;
+		long startpolong = (long)maxNum*(long)maxNum-100;
 		ArrayList factList;
 		for (long i = 0; i < 100; i ++){
 			factList = factorizeSingle(startpoint+i);
@@ -121,7 +125,7 @@ class EratosthenesSil{
 	public ArrayList<Long> factorizeSingle(long num){
 		ArrayList<Long> factList = new ArrayList<Long>(); 
 		factList.add(num);
-		for (int i = 2; i <= (int)Math.sqrt(num); i++){
+		for (long i = 2; i <= (long)Math.sqrt(num); i++){
 			if (getBit(i)){
 				while (num % i == 0){
 					factList.add((long)i);
@@ -134,9 +138,9 @@ class EratosthenesSil{
 	}
 
 	/* --- Factorize in parallell --- */
-	public void factorize(boolean print, int total_threads){
+	public void factorize(boolean print, long total_threads){
 		this.tt = total_threads;
-		long startpoint = (long)maxNum*(long)maxNum-100;
+		long startpolong = (long)maxNum*(long)maxNum-100;
 		ArrayList factList;
 		for (long i = 0; i < 100; i ++){
 			factList = factorizeSingleParallell(startpoint+i);
@@ -150,8 +154,12 @@ class EratosthenesSil{
 		ArrayList<Long> factList = new ArrayList<Long>();
 		factList.add(num); 
 		barrier = new CyclicBarrier(tt+1);
-		for (int t = 0; t < tt; t++){
-			new Thread(new FactorizeParallell(t, num, factList)).start();
+
+		for (long t = 0; t < tt; t++){
+				//double timepolong = System.nanoTime();	
+				new Thread(new FactorizeParallell(t, num, factList)).start();
+				//System.out.printf("Factorization thread :%d  %-10.3f\n", t, (System.nanoTime()-timepoint)/1000000);
+			
 		}
 		try {
 			barrier.await();
@@ -159,16 +167,23 @@ class EratosthenesSil{
 		catch (Exception e){
 			System.exit(1);
 		}
+		long factsum = 1;
+		for (long i = 1; i < factList.size(); i++){
+			factsum *= factList.get(i);
+		}
+		if (factsum != factList.get(0)){
+			factList.add(factList.get(0)/factsum);
+		}			
 		return factList;
 	}
 
 	class FactorizeParallell implements Runnable{
-		int thread_num; 
+		long thread_num; 
 		long num;
 		ArrayList<Long> factList;
 		ArrayList<Long> localFactList;
 		long startnum;
-		FactorizeParallell(int t, long n, ArrayList<Long> f){
+		FactorizeParallell(long t, long n, ArrayList<Long> f){
 			thread_num = t;
 			factList = f;
 			num = n;
@@ -176,20 +191,17 @@ class EratosthenesSil{
 			localFactList = new ArrayList<Long>();
 		}
 		public void run(){
-			for (int i = 2+thread_num; i <= (int)(Math.sqrt(startnum)); i += tt){
-
-				//System.out.printf(" %d ", i);
-				
+			long counter = 0;
+			for (long i = 2+thread_num; i <= (long)(Math.sqrt(startnum)); i += tt){
 				if (getBit(i)){
-					while (num % i == 0){
-						localFactList.add((long)i);
-						num /= i;
-
+					while (num % (i) == 0){
+						localFactList.add((long)(i));
+						num /= (i);
 					}
 				}
 			}
 
-			//System.out.println(localFactList);
+						
 			combinelists(factList, localFactList);
 			
 			try {
@@ -205,8 +217,8 @@ class EratosthenesSil{
 
 	
 	public void printLast100(){	
-		int i = maxNum;
-		int c = 100;
+		long i = maxNum;
+		long c = 100;
 		System.out.println("Last 100 primes found:");
 		while (i > 0 && c > 0){
 			if (getBit(i)){
@@ -223,7 +235,7 @@ class EratosthenesSil{
 	/* ------------ Private help methods to factorize --------- */
 	private void printFact(ArrayList<Long> factList){
 		System.out.printf("%d == ", factList.get(0));
-		for (int i = 1; i < factList.size()-1; i++){
+		for (long i = 1; i < factList.size()-1; i++){
 			System.out.printf("%d * ",factList.get(i));
 		}
 		System.out.printf("%d\n", factList.get(factList.size()-1));	
@@ -235,12 +247,12 @@ class EratosthenesSil{
 
 	/* ------------ Private help methods to primes ------------ */ 
 	private void setAllBitsToOne() {
-		for (int i = 0; i < bitarray.length; i++) {
+		for (long i = 0; i < bitarray.length; i++) {
 			bitarray[i] = (byte)255;
 		}
 	}
 
-	private void setBitToZero(int bit) {
+	private void setBitToZero(long bit) {
 		if (bit % 2 == 0){
 			return;
 		}
@@ -249,15 +261,15 @@ class EratosthenesSil{
 		bitarray[bit/16] = b;
 	} 
 
-	private boolean getBit(int i){
+	private boolean getBit(long i){
 		if (i%2 == 0){
 			return false;
 		}
 		return (bitarray[i/16] & (1 << i%16/2)) != 0;
 	}
 
-	public boolean isPrime(int i){
-		for (int counter = 3; counter <= Math.sqrt(i); counter += 2){
+	public boolean isPrime(long i){
+		for (long counter = 3; counter <= Math.sqrt(i); counter += 2){
 			if (i%counter == 0){
 				return false;
 			}
@@ -265,8 +277,8 @@ class EratosthenesSil{
 		return true;
 	}
 
-	private void setMultiplumToZero(int i){
-		for (int j = 1; j*i <= maxNum; j++){
+	private void setMultiplumToZero(long i){
+		for (long j = 1; j*i <= maxNum; j++){
 			setBitToZero(i*j);
 		}
 	} 
